@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const newUser = await User.create({
+    await User.create({
       name,
       email,
       password: hashedPassword,
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       isVerified: false,
       role: 'user',
     });
+    
 
     // Send OTP email
     const transporter = nodemailer.createTransport({

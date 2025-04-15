@@ -24,6 +24,7 @@ export default function Navbar() {
           setIsLoggedIn(false);
         }
       } catch (err) {
+        console.error("Auth check failed", err);
         setIsLoggedIn(false);
       }
     }

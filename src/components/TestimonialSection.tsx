@@ -46,10 +46,7 @@ export default function TestimonialSection() {
 
         <Slider {...sliderSettings}>
           {testimonials.map((t, index) => (
-            <div
-              key={index}
-              className="bg-white shadow-lg rounded-2xl p-8 mx-4"
-            >
+            <div key={index} className="bg-white shadow-lg rounded-2xl p-8 mx-4">
               <div className="flex flex-col items-center space-y-4">
                 <Image
                   src={t.image}
@@ -58,9 +55,9 @@ export default function TestimonialSection() {
                   height={100}
                   className="rounded-full object-cover border-4 border-red-500"
                 />
-                <p className="text-lg text-gray-700 italic">"{t.quote}"</p>
+                <p className="text-lg text-gray-700 italic">&quot;{t.quote}&quot;</p>
                 <div className="flex justify-center text-yellow-500">
-                  {Array.from({ length: t.rating }).map((_, i) => (
+                  {Array.from({ length: t.rating }, (_, i) => (
                     <Star key={i} className="w-5 h-5 fill-yellow-400" />
                   ))}
                 </div>

@@ -1,4 +1,3 @@
-// /app/api/auth/status/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 
@@ -12,7 +11,7 @@ export async function GET(req: NextRequest) {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET!);
     return NextResponse.json({ isLoggedIn: true, user: decoded });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ isLoggedIn: false });
   }
 }

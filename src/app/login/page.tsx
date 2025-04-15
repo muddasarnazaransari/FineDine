@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock } from 'lucide-react';
 
@@ -10,23 +10,23 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email, password }),
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await res.json();
-      setMessage(data.message || data.error);
+      setMessage(data.message || data.error || '');
 
       if (res.ok) {
         router.push(data.role === 'admin' ? '/admin' : '/');
       }
-    } catch (err) {
+    } catch {
       setMessage('Something went wrong. Please try again later.');
     }
   };
