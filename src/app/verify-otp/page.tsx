@@ -14,6 +14,7 @@ export default function VerifyOtpPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Extract email from query params
   useEffect(() => {
     const queryEmail = searchParams.get('email');
     if (queryEmail) {
@@ -21,6 +22,7 @@ export default function VerifyOtpPage() {
     }
   }, [searchParams]);
 
+  // Handle OTP verification
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -60,6 +62,7 @@ export default function VerifyOtpPage() {
   return (
     <div className="max-w-md mx-auto p-6 min-h-screen flex flex-col justify-center bg-neutral-950 text-white">
       <h1 className="text-2xl font-bold mb-6 text-center">Verify OTP</h1>
+      
       <form onSubmit={handleVerify} className="space-y-4">
         <input
           type="email"
