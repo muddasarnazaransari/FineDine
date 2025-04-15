@@ -1,10 +1,15 @@
 'use client';
 export const dynamic = 'force-dynamic';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function VerifyOtpPage() {
+// Create a simple fallback component
+function LoadingSearchParams() {
+  return <p>Loading verification page...</p>;
+}
+
+function VerifyOtpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -60,39 +65,34 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto p-6 min-h-screen flex flex-col justify-center bg-neutral-950 text-white">
-      <h1 className="text-2xl font-bold mb-6 text-center">Verify OTP</h1>
-      
-      <form onSubmit={handleVerify} className="space-y-4">
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={email}
-          disabled
-          className="w-full p-2 border border-neutral-700 rounded bg-neutral-800 text-neutral-300"
-        />
-        <input
-          type="text"
-          name="otp"
-          placeholder="Enter OTP"
-          value={otp}
-          onChange={(e) => setOtp(e.target.value)}
-          className="w-full p-2 border border-neutral-700 rounded bg-neutral-800 text-white"
-          required
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          aria-busy={loading}
-          className={`w-full py-2 rounded transition ${
-            loading ? 'bg-yellow-400' : 'bg-yellow-500 hover:bg-yellow-600'
-          } text-black font-medium`}
-        >
-          {loading ? 'Verifying...' : 'Verify'}
-        </button>
-      </form>
-
+    <form onSubmit={handleVerify} className="space-y-4">
+      <input
+        type="email"
+        name="email"
+        placeholder="Email"
+        value={email}
+        disabled
+        className="w-full p-2 border border-neutral-700 rounded bg-neutral-800 text-neutral-300"
+      />
+      <input
+        type="text"
+        name="otp"
+        placeholder="Enter OTP"
+        value={otp}
+        onChange={(e) => setOtp(e.target.value)}
+        className="w-full p-2 border border-neutral-700 rounded bg-neutral-800 text-white"
+        required
+      />
+      <button
+        type="submit"
+        disabled={loading}
+        aria-busy={loading}
+        className={`w-full py-2 rounded transition ${
+          loading ? 'bg-yellow-400' : 'bg-yellow-500 hover:bg-yellow-600'
+        } text-black font-medium`}
+      >
+        {loading ? 'Verifying...' : 'Verify'}
+      </button>
       {message && (
         <p
           className={`mt-4 text-center text-sm ${
@@ -102,6 +102,17 @@ export default function VerifyOtpPage() {
           {message}
         </p>
       )}
+    </form>
+  );
+}
+
+export default function VerifyOtpPage() {
+  return (
+    <div className="max-w-md mx-auto p-6 min-h-screen flex flex-col justify-center bg-neutral-950 text-white">
+      <h1 className="text-2xl font-bold mb-6 text-center">Verify OTP</h1>
+      <Suspense fallback={<LoadingSearchParams />}>
+        <VerifyOtpForm />
+      </Suspense>
     </div>
   );
 }
