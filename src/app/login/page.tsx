@@ -9,9 +9,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setMessage('');
+    setLoading(true);
 
     try {
       const res = await fetch('/api/auth/login', {
@@ -21,13 +24,25 @@ export default function LoginPage() {
       });
 
       const data = await res.json();
-      setMessage(data.message || data.error || '');
 
-      if (res.ok) {
+      if (!res.ok) {
+        setMessage(data.error || 'Login failed. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      if (data.name && data.email) {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('user', JSON.stringify({ name: data.name, email: data.email }));
+        }
+
         router.push(data.role === 'admin' ? '/admin' : '/');
       }
-    } catch {
+    } catch (error) {
+      console.error('Login error:', error);
       setMessage('Something went wrong. Please try again later.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,9 +78,14 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            className="w-full bg-yellow-500 hover:bg-yellow-600 transition-colors text-black font-medium py-2 rounded-md"
+            disabled={loading}
+            className={`w-full font-medium py-2 rounded-md transition-colors ${
+              loading
+                ? 'bg-yellow-400 cursor-not-allowed text-black/70'
+                : 'bg-yellow-500 hover:bg-yellow-600 text-black'
+            }`}
           >
-            Login
+            {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

@@ -1,83 +1,156 @@
+// src/components/BookingSection.tsx
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
 const menuItems = [
   {
     category: "Appetizers",
-    items: [{ name: "Paneer Tikka" }, { name: "Hara Bhara Kabab" }, { name: "Dahi Puri" }, { name: "Veg Spring Rolls" }],
+    items: ["Paneer Tikka", "Hara Bhara Kabab", "Dahi Puri", "Veg Spring Rolls"],
   },
   {
     category: "Rajasthani Specials",
-    items: [{ name: "Dal Baati Churma" }, { name: "Laal Maas" }, { name: "Gatte ki Sabzi" }, { name: "Ker Sangri" }],
+    items: ["Dal Baati Churma", "Laal Maas", "Gatte ki Sabzi", "Ker Sangri"],
   },
   {
     category: "Main Course",
-    items: [{ name: "Butter Chicken" }, { name: "Paneer Butter Masala" }, { name: "Malai Kofta" }, { name: "Chole Bhature" }],
+    items: ["Butter Chicken", "Paneer Butter Masala", "Malai Kofta", "Chole Bhature"],
   },
   {
     category: "Desserts",
-    items: [{ name: "Gulab Jamun" }, { name: "Moong Dal Halwa" }, { name: "Malpua" }, { name: "Rasmalai" }],
+    items: ["Gulab Jamun", "Moong Dal Halwa", "Malpua", "Rasmalai"],
   },
   {
     category: "Beverages",
-    items: [{ name: "Masala Chai" }, { name: "Lassi" }, { name: "Jaljeera" }, { name: "Aam Panna" }],
+    items: ["Masala Chai", "Lassi", "Jaljeera", "Aam Panna"],
   },
 ];
 
-const meals = menuItems.flatMap((cat) => cat.items.map((item) => item.name));
-const packs = ["Birthday Special", "Anniversary Special", "Date Night Special"];
+const meals = menuItems.flatMap((cat) => cat.items);
+
+const seatingOptions = ["AC Indoor", "Non-AC Indoor", "Outdoor", "Terrace", "Private Dining"];
+
+const timeSlots = [
+  "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
+  "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00",
+];
+
+const durationOptions = ["1 hour", "1.5 hours", "2 hours", "2.5 hours", "3 hours"];
 
 type FormData = {
   name: string;
   date: Date;
-  time: string;
+  startTime: string;
+  duration: string;
   guests: number;
   seating: string;
   meals: string[];
-  pack: string;
 };
 
 export default function BookingSection() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState<FormData>({
     name: "",
     date: new Date(),
-    time: "19:00",
+    startTime: "19:00",
+    duration: "1.5 hours",
     guests: 2,
-    seating: "Indoor",
+    seating: "AC Indoor",
     meals: [],
-    pack: "",
   });
 
   const [confirmed, setConfirmed] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "guests" ? Number(value) : value,
+    }));
   };
 
   const handleMealToggle = (meal: string) => {
     setFormData((prev) => ({
       ...prev,
-      meals: prev.meals.includes(meal) ? prev.meals.filter((m) => m !== meal) : [...prev.meals, meal],
+      meals: prev.meals.includes(meal)
+        ? prev.meals.filter((m) => m !== meal)
+        : [...prev.meals, meal],
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setConfirmed(true);
+    setError("");
+
+    try {
+      // Get user info (assuming it's in localStorage or sessionStorage)
+      const storedUser = typeof window !== "undefined" ? sessionStorage.getItem("user") : null;
+      const user = storedUser ? JSON.parse(storedUser) : null;
+
+      if (!user?.name || !user?.email) {
+        setError("Please log in to make a reservation.");
+        return;
+      }
+
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-name": user.name,
+          "x-user-email": user.email,
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) throw new Error("Failed to create booking");
+
+      // Save to sessionStorage
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("bookingData", JSON.stringify(formData));
+      }
+
+      setConfirmed(true);
+      router.push("/billing");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong while confirming your reservation. Please try again.");
+    }
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+
+
+  const getFilteredTimeSlots = () => {
+    return timeSlots.filter((time) => {
+      const today = new Date();
+      const selected = formData.date;
+      const isToday = today.toDateString() === selected.toDateString();
+
+      if (!isToday) return true;
+
+      const [hours, minutes] = time.split(":").map(Number);
+      const timeSlotDate = new Date(selected);
+      timeSlotDate.setHours(hours, minutes, 0, 0);
+
+      const nowIST = new Date(
+        new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" })
+      );
+
+      return timeSlotDate > nowIST;
+    });
+  };
 
   return (
     <section className="py-20 px-6 bg-gradient-to-br from-orange-50 to-red-100" id="booking">
       <div className="max-w-3xl mx-auto bg-white p-8 rounded-3xl shadow-2xl border border-red-200">
-        <h2 className="text-4xl font-extrabold mb-8 text-center text-red-700">Reserve Your Experience</h2>
+        <h2 className="text-4xl font-extrabold mb-8 text-center text-red-700">Reserve Your Table</h2>
+
         <form onSubmit={handleSubmit} className="space-y-6 text-gray-800">
+          {/* Name */}
           <div>
             <label className="block mb-2 font-semibold">Your Name</label>
             <input
@@ -91,7 +164,8 @@ export default function BookingSection() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Date + Time + Duration */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block mb-2 font-semibold">Date</label>
               <DatePicker
@@ -103,22 +177,34 @@ export default function BookingSection() {
               />
             </div>
             <div>
-              <label className="block mb-2 font-semibold">Time</label>
+              <label className="block mb-2 font-semibold">Start Time</label>
               <select
-                name="time"
-                value={formData.time}
+                name="startTime"
+                value={formData.startTime}
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
               >
-                {["18:00", "19:00", "20:00", "21:00"].map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
+                {getFilteredTimeSlots().map((time) => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block mb-2 font-semibold">Duration</label>
+              <select
+                name="duration"
+                value={formData.duration}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+              >
+                {durationOptions.map((d) => (
+                  <option key={d} value={d}>{d}</option>
                 ))}
               </select>
             </div>
           </div>
 
+          {/* Guests + Seating */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block mb-2 font-semibold">Guests</label>
@@ -129,9 +215,7 @@ export default function BookingSection() {
                 className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
               >
                 {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
+                  <option key={n} value={n}>{n}</option>
                 ))}
               </select>
             </div>
@@ -143,44 +227,31 @@ export default function BookingSection() {
                 onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
               >
-                {["Indoor", "Outdoor", "Private"].map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
+                {seatingOptions.map((s) => (
+                  <option key={s} value={s}>{s}</option>
                 ))}
               </select>
             </div>
           </div>
 
-          <div>
-            <label className="block mb-2 font-semibold">Special Occasion Package</label>
-            <select
-              name="pack"
-              value={formData.pack}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg p-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
-            >
-              <option value="">-- Select a Package (optional) --</option>
-              {packs.map((pack) => (
-                <option key={pack} value={pack}>
-                  {pack}
-                </option>
-              ))}
-            </select>
-          </div>
-
+          {/* Meals */}
           <div>
             <label className="block mb-2 font-semibold">Pre-select Meals (Optional)</label>
             <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto border border-gray-300 rounded-lg p-3">
               {meals.map((meal) => (
                 <label key={meal} className="flex items-center space-x-2 text-sm">
-                  <input type="checkbox" checked={formData.meals.includes(meal)} onChange={() => handleMealToggle(meal)} />
+                  <input
+                    type="checkbox"
+                    checked={formData.meals.includes(meal)}
+                    onChange={() => handleMealToggle(meal)}
+                  />
                   <span>{meal}</span>
                 </label>
               ))}
             </div>
           </div>
 
+          {/* Submit */}
           <button
             type="submit"
             className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-xl shadow-md transition duration-300"
@@ -195,14 +266,14 @@ export default function BookingSection() {
               🎉 Thank you, <strong>{formData.name}</strong>! Your reservation for{" "}
               <strong>{formData.guests}</strong> guest(s) on{" "}
               <strong>{formData.date.toLocaleDateString()}</strong> at{" "}
-              <strong>{formData.time}</strong> has been confirmed.
-              {formData.pack && (
-                <>
-                  <br />
-                  🎁 You selected the <strong>{formData.pack}</strong> package!
-                </>
-              )}
+              <strong>{formData.startTime}</strong> for <strong>{formData.duration}</strong> has been confirmed.
             </p>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-6 p-4 bg-red-100 text-red-800 rounded-lg text-center shadow-sm">
+            <p>{error}</p>
           </div>
         )}
       </div>

@@ -42,9 +42,16 @@ export default function RegisterPage() {
     setMessage(data.message || data.error);
 
     if (res.ok) {
+      // ✅ Save user info in sessionStorage before moving to OTP
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          'user',
+          JSON.stringify({ name: form.fullName, email: form.email })
+        );
+      }
+
       router.push(`/verify-otp?email=${form.email}`);
     }
-    
   };
 
   return (

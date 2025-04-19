@@ -1,3 +1,4 @@
+// src/app/verify-otp/page.tsx
 'use client';
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ function VerifyOtpForm() {
   const [message, setMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
 
   // Extract email from query params
   useEffect(() => {
@@ -64,6 +66,32 @@ function VerifyOtpForm() {
     }
   };
 
+  // Handle Resend OTP
+  const handleResend = async () => {
+    if (!email) return;
+
+    setResending(true);
+    setMessage('');
+
+    try {
+      const res = await fetch('/api/auth/resend-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+      setMessage(data.message || data.error);
+      setIsSuccess(res.ok);
+    } catch (error) {
+      console.error('Resend error:', error);
+      setMessage('Failed to resend OTP. Try again.');
+      setIsSuccess(false);
+    } finally {
+      setResending(false);
+    }
+  };
+
   return (
     <form onSubmit={handleVerify} className="space-y-4">
       <input
@@ -92,6 +120,14 @@ function VerifyOtpForm() {
         } text-black font-medium`}
       >
         {loading ? 'Verifying...' : 'Verify'}
+      </button>
+      <button
+        type="button"
+        onClick={handleResend}
+        disabled={resending}
+        className="w-full py-2 rounded bg-neutral-800 hover:bg-neutral-700 text-white text-sm"
+      >
+        {resending ? 'Resending...' : 'Resend OTP'}
       </button>
       {message && (
         <p

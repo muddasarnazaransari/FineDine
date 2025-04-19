@@ -29,10 +29,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid OTP.' }, { status: 400 });
     }
 
+    // Mark user as verified
     user.isVerified = true;
     user.otp = null;
     await user.save();
 
+    // Send welcome email (non-blocking logic)
     try {
       const transporter = nodemailer.createTransport({
         service: 'gmail',
@@ -46,11 +48,11 @@ export async function POST(req: NextRequest) {
         from: process.env.EMAIL_USER,
         to: email,
         subject: 'Welcome to Our Restaurant App!',
-        text: `Hi ${user.name || 'User'}, thank you for registering! Your account is now verified.`,
+        text: `Hi ${user.name || 'there'},\n\nThank you for registering. Your account is now verified. Enjoy our services!\n\nWarm regards,\nThe Restaurant Team`,
       });
     } catch (emailError) {
       console.error('Failed to send welcome email:', emailError);
-      // Not returning error here since the core logic (verification) succeeded
+      // Note: No return here since verification already succeeded
     }
 
     return NextResponse.json({ message: 'Account verified successfully.' });

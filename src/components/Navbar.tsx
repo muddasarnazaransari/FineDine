@@ -10,8 +10,10 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
   const router = useRouter();
-  const pathname = usePathname(); // 👈 watch for route changes
+  const pathname = usePathname();
 
   useEffect(() => {
     async function checkAuth() {
@@ -20,17 +22,20 @@ export default function Navbar() {
         const data = await res.json();
         if (res.ok && data.isLoggedIn) {
           setIsLoggedIn(true);
+          setUserRole(data.user?.role || null);
         } else {
           setIsLoggedIn(false);
+          setUserRole(null);
         }
       } catch (err) {
-        console.error("Auth check failed", err);
+        console.error('Auth check failed:', err);
         setIsLoggedIn(false);
+        setUserRole(null);
       }
     }
 
     checkAuth();
-  }, [pathname]); // 👈 re-run on route change
+  }, [pathname]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
   const closeMenu = () => setIsOpen(false);
@@ -39,6 +44,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setIsLoggedIn(false);
+    setUserRole(null);
     router.push('/');
   };
 

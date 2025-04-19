@@ -18,11 +18,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    if (!user.isVerified) {
-      console.log('⚠️ User not verified');
-      return NextResponse.json({ error: 'Please verify your account first' }, { status: 403 });
-    }
-
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
       console.log('❌ Incorrect password');
@@ -42,6 +37,8 @@ export async function POST(req: NextRequest) {
     const response = NextResponse.json({
       message: 'Login successful',
       role: user.role,
+      name: user.name,
+      email: user.email,
     });
 
     response.cookies.set('token', token, {
